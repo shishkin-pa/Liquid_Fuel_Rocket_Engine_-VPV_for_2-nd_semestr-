@@ -3,8 +3,17 @@
 #include <vector>
 
 // Конструктор
-LavalNozzle::LavalNozzle(double gamma, double R, double P0, double T0, double Pe, double m_dot)
-    : gamma(gamma), R(R), P0(P0), T0(T0), Pe(Pe), m_dot(m_dot) {}
+LavalNozzle::LavalNozzle(double gamma, double R, double P0, double Pe, double m_dot, double Q, double OF_ratio, double M)
+    : gamma(gamma), R(R), P0(P0), Pe(Pe), m_dot(m_dot), Q(Q), OF_ratio(OF_ratio), M(M) {
+    // Расчёт температуры в камере сгорания
+    T0 = calculateCombustionTemperature();
+}
+
+// Расчет температуры в камере сгорания
+double LavalNozzle::calculateCombustionTemperature() const {
+    // Упрощённая формула для расчёта температуры в камере сгорания
+    return Q / (R * (1 + OF_ratio));
+}
 
 // Расчет критического давления
 double LavalNozzle::calculateCriticalPressure() const {
