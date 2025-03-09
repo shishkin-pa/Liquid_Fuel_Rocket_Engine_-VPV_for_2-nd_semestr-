@@ -1,0 +1,6 @@
+To compile the following programs, use those commands in terminal:
+
+g++ -c shape.cpp -o shape.o
+g++ -c main.cpp -o main.o
+g++ shape.o main.o -o nozzle_calculator
+./nozzle_calculator
