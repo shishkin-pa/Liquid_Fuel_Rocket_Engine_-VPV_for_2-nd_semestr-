@@ -3,51 +3,60 @@
 #include <vector>
 
 // Конструктор
-LavalNozzle::LavalNozzle(double gamma, double R, double P0, double Pe, double m_dot, double Q, double OF_ratio, double M)
-    : gamma(gamma), R(R), P0(P0), Pe(Pe), m_dot(m_dot), Q(Q), OF_ratio(OF_ratio), M(M) {
-    // Расчёт температуры в камере сгорания
-    T0 = calculateCombustionTemperature();
+LavalNozzle::LavalNozzle(double gamma, double R, double P0, double T0, double Pe, double m_dot, double mu, double k, double D_throat, double k_parabola, double L)
+    : gamma(gamma), R(R), P0(P0), T0(T0), Pe(Pe), m_dot(m_dot), mu(mu), k(k), D_throat(D_throat), k_parabola(k_parabola), L(L) {}
+
+// Функция для задания параболического профиля сопла
+double LavalNozzle::nozzleProfile(double x) {
+    return D_throat + k_parabola * x * x; // Параболический профиль
 }
 
-// Расчет температуры в камере сгорания
-double LavalNozzle::calculateCombustionTemperature() const {
-    // Упрощённая формула для расчёта температуры в камере сгорания
-    return Q / (R * (1 + OF_ratio));
+// Функция для расчёта площади сечения
+double LavalNozzle::calculateArea(double D) {
+    return M_PI * pow(D / 2, 2);
 }
 
-// Расчет критического давления
-double LavalNozzle::calculateCriticalPressure() const {
-    return P0 * pow(2.0 / (gamma + 1.0), gamma / (gamma - 1.0));
+// Численное решение уравнений
+void LavalNozzle::solveNavierStokes(std::vector<double>& pressure, std::vector<double>& temperature, std::vector<double>& velocity) {
+    int num_points = pressure.size();
+    double dx = L / (num_points - 1);
+    double A_throat = calculateArea(D_throat);
+
+    // Начальные условия
+    pressure[0] = P0;
+    temperature[0] = T0;
+    velocity[0] = (m_dot * R * T0) / (P0 * calculateArea(nozzleProfile(0)));
+
+    for (int i = 1; i < num_points; ++i) {
+        double x = i * dx;
+        double D = nozzleProfile(x);
+        double A = calculateArea(D);
+
+        // Изоэнтропические соотношения
+        pressure[i] = P0 * pow(A_throat / A, (2 * gamma) / (gamma - 1));
+        temperature[i] = T0 * pow(A_throat / A, (2 * (gamma - 1)) / gamma);
+        velocity[i] = (m_dot * R * temperature[i]) / (pressure[i] * A);
+
+        // Поправка на вязкость и теплопроводность
+        double dp_dx = -mu * velocity[i-1] / (D * D);
+        pressure[i] += dp_dx * dx;
+
+        double dT_dx = -k * (temperature[i-1] - T0) / (D * D);
+        temperature[i] += dT_dx * dx;
+    }
+
+    // Корректировка выходного давления
+    pressure[num_points - 1] = Pe;
 }
 
-// Расчет критической температуры
-double LavalNozzle::calculateCriticalTemperature() const {
-    return T0 * (2.0 / (gamma + 1.0));
-}
-
-// Расчет площади критического сечения
-double LavalNozzle::calculateCriticalArea() const {
-    double term = pow((gamma + 1.0) / 2.0, (gamma + 1.0) / (2.0 * (gamma - 1.0)));
-    return (m_dot * sqrt(T0)) / (P0 * sqrt(gamma / R) * term);
-}
-
-// Расчет площади выходного сечения
-double LavalNozzle::calculateExitArea(double A_star) const {
-    double Me = sqrt((2.0 / (gamma - 1.0)) * (pow(P0 / Pe, (gamma - 1.0) / gamma) - 1.0));
-    double term = pow((1.0 + (gamma - 1.0) / 2.0 * Me * Me), (gamma + 1.0) / (2.0 * (gamma - 1.0)));
-    return A_star / Me * term;
-}
-
-// Построение профиля сопла
-std::vector<double> LavalNozzle::generateNozzleProfile(double A_star, double A_e, double L, int num_points) const {
+// Расчет профиля сопла
+std::vector<double> LavalNozzle::calculateNozzleProfile(int num_points) {
     std::vector<double> profile(num_points);
-    double D_star = sqrt(4.0 * A_star / M_PI);
-    double D_e = sqrt(4.0 * A_e / M_PI);
-    double slope = (D_e - D_star) / (2.0 * L);
+    double dx = L / (num_points - 1);
 
     for (int i = 0; i < num_points; ++i) {
-        double x = static_cast<double>(i) / (num_points - 1) * L;
-        profile[i] = D_star + 2.0 * slope * x;
+        double x = i * dx;
+        profile[i] = nozzleProfile(x);
     }
 
     return profile;
