@@ -32,9 +32,9 @@ void LavalNozzle::solveNavierStokes(std::vector<double>& pressure, std::vector<d
         double D = nozzleProfile(x);
         double A = calculateArea(D);
 
-        // Изоэнтропические соотношения
+        // Изоэнтропические соотношения (исправлено для температуры)
         pressure[i] = P0 * pow(A_throat / A, (2 * gamma) / (gamma - 1));
-        temperature[i] = T0 * pow(A_throat / A, (2 * (gamma - 1)) / gamma);
+        temperature[i] = T0 * pow(A_throat / A, (gamma - 1) / gamma); // Исправлено
         velocity[i] = (m_dot * R * temperature[i]) / (pressure[i] * A);
 
         // Поправка на вязкость и теплопроводность
@@ -48,7 +48,6 @@ void LavalNozzle::solveNavierStokes(std::vector<double>& pressure, std::vector<d
     // Корректировка выходного давления
     pressure[num_points - 1] = Pe;
 }
-
 // Расчет профиля сопла
 std::vector<double> LavalNozzle::calculateNozzleProfile(int num_points) {
     std::vector<double> profile(num_points);
