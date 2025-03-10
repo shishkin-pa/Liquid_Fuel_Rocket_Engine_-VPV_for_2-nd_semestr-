@@ -5,38 +5,34 @@
 
 class LavalNozzle {
 private:
-    double gamma;       // Показатель адиабаты для продуктов сгорания
-    double R;           // Удельная газовая постоянная для продуктов сгорания (Дж/(кг·К))
+    double gamma;       // Показатель адиабаты
+    double R;           // Удельная газовая постоянная (Дж/(кг·К))
     double P0;          // Давление в камере сгорания (Па)
     double T0;          // Температура в камере сгорания (К)
     double Pe;          // Атмосферное давление (Па)
     double m_dot;       // Массовый расход (кг/с)
-    double Q;           // Теплота сгорания топлива (Дж/кг)
-    double OF_ratio;    // Соотношение окислителя к топливу (O/F)
-    double M;           // Молярная масса продуктов сгорания (кг/моль)
+    double mu;          // Динамическая вязкость (Па·с)
+    double k;           // Теплопроводность (Вт/(м·К))
+    double D_throat;    // Диаметр горловины сопла (м)
+    double k_parabola;  // Коэффициент для параболического профиля
+    double L;           // Длина сопла (м)
 
 public:
     // Конструктор
-    LavalNozzle(double gamma, double R, double P0, double Pe, double m_dot, double Q, double OF_ratio, double M);
+    LavalNozzle(double gamma, double R, double P0, double T0, double Pe, double m_dot, double mu, double k, double D_throat, double k_parabola, double L);
 
-    // Расчет критического давления
-    double calculateCriticalPressure() const;
+    // Расчет профиля сопла
+    std::vector<double> calculateNozzleProfile(int num_points);
 
-    // Расчет критической температуры
-    double calculateCriticalTemperature() const;
-
-    // Расчет площади критического сечения
-    double calculateCriticalArea() const;
-
-    // Расчет площади выходного сечения
-    double calculateExitArea(double A_star) const;
-
-    // Построение профиля сопла
-    std::vector<double> generateNozzleProfile(double A_star, double A_e, double L, int num_points) const;
+    // Численное решение уравнений
+    void solveNavierStokes(std::vector<double>& pressure, std::vector<double>& temperature, std::vector<double>& velocity);
 
 private:
-    // Расчет температуры в камере сгорания
-    double calculateCombustionTemperature() const;
+    // Функция для задания параболического профиля сопла
+    double nozzleProfile(double x);
+
+    // Функция для расчёта площади сечения
+    double calculateArea(double D);
 };
 
 #endif // SHAPE_H
