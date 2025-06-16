@@ -1,6 +1,5 @@
 To compile the following programs, use those commands in terminal:
 
-g++ -c shape.cpp -o shape.o
-g++ -c main.cpp -o main.o
-g++ shape.o main.o -o nozzle_calculator
-./nozzle_calculator
+g++ -std=c++17 -c substance.cpp -o substance.o && g++ -std=c++17 -c engine_calculations.cpp -o engine_calculations.o && g++ -std=c++17 main.cpp substance.o engine_calculations.o -o rocket_engine
+
+./rocket_engine
